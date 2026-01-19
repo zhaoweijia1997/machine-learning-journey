@@ -111,13 +111,13 @@ def detect_webcam(camera_id=0, confidence=0.5, show_fps=True):
                 )
 
                 # 显示画面
-                cv2.imshow('YOLOv8 Real-time Person Detection', annotated_frame)
+                cv2.imshow('YOLOv8 Detection [Press ESC or Q to quit]', annotated_frame)
 
-            # 处理按键
+            # 处理按键 - 支持 ESC 和 q 键
             key = cv2.waitKey(1) & 0xFF
 
-            if key == ord('q'):
-                # 退出
+            if key == 27 or key == ord('q'):
+                # ESC 键 (27) 或 q 键退出
                 print("\n👋 正在退出...")
                 break
             elif key == ord('s'):
@@ -136,8 +136,13 @@ def detect_webcam(camera_id=0, confidence=0.5, show_fps=True):
 
     finally:
         # 释放资源
+        print("正在释放资源...")
         cap.release()
         cv2.destroyAllWindows()
+
+        # 强制关闭所有 OpenCV 窗口（Windows 修复）
+        for i in range(10):
+            cv2.waitKey(1)
 
         # 显示统计信息
         total_time = time.time() - start_time

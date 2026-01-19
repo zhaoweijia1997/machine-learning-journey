@@ -85,8 +85,8 @@ def main():
                     print("无法读取帧")
                     break
 
-                # GPU 推理
-                results = model(frame, device=device, verbose=False)
+                # GPU 推理（OpenVINO 自动使用最优设备）
+                results = model(frame, verbose=False)
 
                 # 统计人数
                 person_count = sum(1 for box in results[0].boxes if int(box.cls[0]) == 0)
@@ -123,13 +123,14 @@ def main():
                     2
                 )
 
-                cv2.imshow('GPU Accelerated Detection', annotated_frame)
+                cv2.imshow('GPU Detection [Press ESC or Q to quit]', annotated_frame)
 
-            # 按键处理
+            # 按键处理 - 增加 ESC 键支持
             key = cv2.waitKey(1) & 0xFF
 
-            if key == ord('q'):
-                print("\n退出...")
+            # ESC 键 (27) 或 q 键
+            if key == 27 or key == ord('q'):
+                print("\n✋ 正在退出...")
                 break
             elif key == ord('s'):
                 filename = f"gpu_snapshot_{int(time.time())}.jpg"
@@ -144,8 +145,14 @@ def main():
         print("\n检测到中断...")
 
     finally:
+        # 清理资源
+        print("正在释放资源...")
         cap.release()
         cv2.destroyAllWindows()
+
+        # 强制关闭所有 OpenCV 窗口（Windows 修复）
+        for i in range(10):
+            cv2.waitKey(1)
 
         # 统计
         total_time = time.time() - start_time
