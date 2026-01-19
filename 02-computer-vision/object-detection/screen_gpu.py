@@ -61,19 +61,38 @@ def main():
 
     # 初始化屏幕捕获
     print("正在初始化屏幕捕获...")
-    sct = mss.mss()
 
-    # 列出所有显示器
-    monitors = sct.monitors[1:]  # 排除第一个（全部显示器）
-    print(f"检测到 {len(monitors)} 个显示器:")
-    for i, mon in enumerate(monitors, 1):
-        print(f"  {i}. {mon['width']}x{mon['height']} @ ({mon['left']}, {mon['top']})")
+    # 尝试使用 DXCam 硬件加速
+    try:
+        import dxcam
+        sct = mss.mss()
+        monitors = sct.monitors[1:]
 
-    # 选择显示器
-    monitor_idx = min(args.monitor, len(monitors))
-    monitor = monitors[monitor_idx - 1]
+        print(f"检测到 {len(monitors)} 个显示器:")
+        for i, mon in enumerate(monitors, 1):
+            print(f"  {i}. {mon['width']}x{mon['height']} @ ({mon['left']}, {mon['top']})")
 
-    print(f"\n使用显示器 {monitor_idx}: {monitor['width']}x{monitor['height']}")
+        monitor_idx = min(args.monitor, len(monitors))
+
+        # 使用 DXCam 硬件加速捕获
+        camera = dxcam.create(output_idx=monitor_idx-1, output_color="BGR")
+        use_dxcam = True
+        print(f"\n✓ DXCam 硬件加速已启用")
+        print(f"使用显示器 {monitor_idx}: {monitors[monitor_idx-1]['width']}x{monitors[monitor_idx-1]['height']}")
+    except Exception as e:
+        # 回退到 MSS
+        print(f"DXCam 不可用，使用 MSS: {e}")
+        sct = mss.mss()
+        monitors = sct.monitors[1:]
+
+        print(f"检测到 {len(monitors)} 个显示器:")
+        for i, mon in enumerate(monitors, 1):
+            print(f"  {i}. {mon['width']}x{mon['height']} @ ({mon['left']}, {mon['top']})")
+
+        monitor_idx = min(args.monitor, len(monitors))
+        monitor = monitors[monitor_idx - 1]
+        use_dxcam = False
+        print(f"\n使用显示器 {monitor_idx}: {monitor['width']}x{monitor['height']}")
     print()
     print("按键说明:")
     print("  ESC/q - 退出")
@@ -98,9 +117,14 @@ def main():
         while True:
             if not paused:
                 # 捕获屏幕
-                screenshot = sct.grab(monitor)
-                frame = np.array(screenshot)
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+                if use_dxcam:
+                    frame = camera.grab()
+                    if frame is None:
+                        continue
+                else:
+                    screenshot = sct.grab(monitor)
+                    frame = np.array(screenshot)
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
                 # GPU 推理（OpenVINO 自动使用最优设备）
                 results = model(frame, verbose=False)
@@ -161,8 +185,15 @@ def main():
             elif key == ord('m'):
                 # 切换显示器
                 monitor_idx = (monitor_idx % len(monitors)) + 1
-                monitor = monitors[monitor_idx - 1]
-                print(f"切换到显示器 {monitor_idx}: {monitor['width']}x{monitor['height']}")
+
+                if use_dxcam:
+                    # 重新初始化 DXCam
+                    camera.stop()
+                    camera = dxcam.create(output_idx=monitor_idx-1, output_color="BGR")
+                    print(f"切换到显示器 {monitor_idx}: {monitors[monitor_idx-1]['width']}x{monitors[monitor_idx-1]['height']}")
+                else:
+                    monitor = monitors[monitor_idx - 1]
+                    print(f"切换到显示器 {monitor_idx}: {monitor['width']}x{monitor['height']}")
 
     except KeyboardInterrupt:
         print("\n检测到中断...")
@@ -170,6 +201,8 @@ def main():
     finally:
         # 清理资源
         print("正在释放资源...")
+        if use_dxcam:
+            camera.stop()
         cv2.destroyAllWindows()
 
         # 强制关闭所有 OpenCV 窗口（Windows 修复）
