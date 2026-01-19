@@ -25,6 +25,8 @@ def main():
                        help='最大帧率限制 (0=不限制, 默认=0)')
     parser.add_argument('--no-display', action='store_true',
                        help='不显示窗口，仅后台检测')
+    parser.add_argument('--resize', type=int, default=0,
+                       help='推理输入分辨率 (0=原始, 640/1280等, 默认=0)')
     args = parser.parse_args()
 
     print("=" * 60)
@@ -35,6 +37,7 @@ def main():
     # 显示配置
     print("检测配置:")
     print(f"  置信度阈值: {args.conf}")
+    print(f"  推理分辨率: {'原始' if args.resize == 0 else f'{args.resize}px'}")
     print(f"  帧延时: {args.delay}ms")
     if args.max_fps > 0:
         print(f"  最大帧率: {args.max_fps} FPS")
@@ -157,9 +160,17 @@ def main():
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
                 capture_time = (time.time() - capture_start) * 1000  # ms
 
+                # 降低分辨率用于推理（如果指定）
+                if args.resize > 0:
+                    h, w = frame.shape[:2]
+                    scale = args.resize / max(h, w)
+                    infer_frame = cv2.resize(frame, (int(w * scale), int(h * scale)))
+                else:
+                    infer_frame = frame
+
                 # GPU 推理（计时）
                 infer_start = time.time()
-                results = model(frame, conf=args.conf, verbose=False)
+                results = model(infer_frame, conf=args.conf, verbose=False)
                 infer_time = (time.time() - infer_start) * 1000  # ms
 
                 # 记录性能数据
@@ -325,10 +336,16 @@ def main():
         print("瓶颈分析:")
         if avg_capture_final > avg_inference_final:
             print(f"  ⚠️  屏幕捕获是瓶颈 ({avg_capture_final:.1f}ms > {avg_inference_final:.1f}ms)")
-            print(f"  建议: 确保 DXCam 已启用，或降低捕获分辨率")
+            print(f"  优化建议:")
+            print(f"    1. 确保 DXCam 硬件加速已启用")
+            print(f"    2. 降低捕获分辨率（影响显示质量）")
         else:
             print(f"  ⚠️  GPU 推理是瓶颈 ({avg_inference_final:.1f}ms > {avg_capture_final:.1f}ms)")
-            print(f"  建议: 降低置信度阈值或使用更小的模型")
+            print(f"  优化建议:")
+            print(f"    1. 降低输入分辨率（resize 输入图像）- 最有效")
+            print(f"    2. 使用更小模型（yolov8n 最快）")
+            print(f"    3. 确保 GPU 加速正常工作")
+            print(f"  ⚠️  注意: 置信度阈值不影响推理速度！")
         print("=" * 60)
 
 if __name__ == "__main__":
