@@ -63,9 +63,10 @@ runs/
 outputs/
 checkpoints/
 
-# IDE
+# IDE 和开发工具
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
