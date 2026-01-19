@@ -52,6 +52,30 @@ Machine Learning/
 2. 从基础项目开始（见 [01-basics](01-basics/) 目录）
 3. 深入计算机视觉实战（见 [02-computer-vision](02-computer-vision/) 目录）
 
+## 实用工具
+
+项目包含了一些自动化脚本，让 Git 管理更轻松：
+
+### 快速提交（自动清理 + 提交 + 推送）
+```bash
+# Windows
+utils\quick-commit.bat "你的提交信息"
+
+# Linux/Mac
+bash utils/quick-commit.sh "你的提交信息"
+```
+
+### 清理临时文件
+```bash
+# Windows
+utils\git-clean.bat
+
+# Linux/Mac
+bash utils/git-clean.sh
+```
+
+详见 [utils/README.md](utils/README.md)
+
 ## 学习路线
 
 ### 第一阶段：环境搭建

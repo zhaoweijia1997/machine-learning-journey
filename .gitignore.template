@@ -1,0 +1,138 @@
+# ==========================================
+# 机器学习项目 .gitignore 模板
+# ==========================================
+
+# Python 基础
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 虚拟环境
+env/
+venv/
+ENV/
+.venv/
+virtualenv/
+
+# Python 构建产物
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+.jupyter/
+
+# 机器学习模型文件（大文件）
+*.h5
+*.hdf5
+*.pb
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.caffemodel
+*.pkl
+*.pickle
+*.joblib
+
+# 数据集（大文件不提交）
+datasets/**/*.jpg
+datasets/**/*.jpeg
+datasets/**/*.png
+datasets/**/*.bmp
+datasets/**/*.gif
+datasets/**/*.mp4
+datasets/**/*.avi
+datasets/**/*.mov
+datasets/**/*.zip
+datasets/**/*.tar.gz
+datasets/**/*.tar
+datasets/**/*.rar
+datasets/**/*.7z
+
+# 但保留数据集的说明文件和小型示例
+!datasets/**/README.md
+!datasets/**/*.txt
+!datasets/**/sample.jpg
+!datasets/**/example.png
+
+# 训练好的模型权重（可选择性提交）
+models/**/*.h5
+models/**/*.pth
+models/**/*.onnx
+models/**/*.pb
+checkpoints/**/*
+
+# 训练日志和输出
+logs/
+*.log
+runs/
+outputs/
+wandb/
+tensorboard/
+mlruns/
+
+# IDE 和开发工具
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+*.bak
+*.cache
+
+# 环境变量和配置
+.env
+.env.local
+.env.*.local
+config.local.json
+secrets.json
+credentials.json
+
+# 测试和覆盖率
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# 文档构建
+docs/_build/
+site/
+
+# 特定框架
+.mypy_cache/
+.dmypy.json
+dmypy.json
