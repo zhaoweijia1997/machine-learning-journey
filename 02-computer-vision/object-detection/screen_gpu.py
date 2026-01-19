@@ -201,59 +201,36 @@ def main():
                 avg_inference = sum(inference_times) / len(inference_times) if inference_times else 0
                 total_time_per_frame = avg_capture + avg_inference
 
-                # 显示信息 - 多行显示所有参数
-                y_offset = 30
-                line_height = 28
-                font_scale = 0.6
-                thickness = 2
+                # 所有信息显示在右下角
+                h_frame, w_frame = annotated_frame.shape[:2]
+                line_height = 22
+                font_scale = 0.45
+                thickness = 1
 
-                # 第一行：FPS 和设备
-                cv2.putText(
-                    annotated_frame,
-                    f"FPS: {current_fps:.1f} | DXCam: {'ON' if use_dxcam else 'OFF'} | GPU: ON",
-                    (10, y_offset),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    font_scale,
-                    (0, 255, 0),
-                    thickness
-                )
-
-                # 第二行：显示器和检测统计
-                y_offset += line_height
-                cv2.putText(
-                    annotated_frame,
-                    f"Monitor: {monitor_idx} | People: {person_count} | Total Objects: {detection_count}",
-                    (10, y_offset),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    font_scale,
-                    (0, 255, 0),
-                    thickness
-                )
-
-                # 第三行：性能时间分析
-                y_offset += line_height
-                cv2.putText(
-                    annotated_frame,
-                    f"Capture: {avg_capture:.1f}ms | Inference: {avg_inference:.1f}ms | Total: {total_time_per_frame:.1f}ms",
-                    (10, y_offset),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    font_scale,
-                    (0, 255, 255),  # 黄色表示性能数据
-                    thickness
-                )
-
-                # 第四行：配置参数
-                y_offset += line_height
+                # 准备所有文本行
                 max_fps_text = f"{args.max_fps}" if args.max_fps > 0 else "Unlimited"
-                cv2.putText(
-                    annotated_frame,
-                    f"Conf: {args.conf} | Delay: {args.delay}ms | Max FPS: {max_fps_text}",
-                    (10, y_offset),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    font_scale,
-                    (255, 255, 0),  # 青色表示配置
-                    thickness
-                )
+                texts = [
+                    (f"FPS: {current_fps:.1f} | DXCam: {'ON' if use_dxcam else 'OFF'} | GPU: ON", (0, 255, 0)),
+                    (f"Monitor: {monitor_idx} | People: {person_count} | Objects: {detection_count}", (0, 255, 0)),
+                    (f"Capture: {avg_capture:.1f}ms | Inference: {avg_inference:.1f}ms | Total: {total_time_per_frame:.1f}ms", (0, 255, 255)),
+                    (f"Conf: {args.conf} | Delay: {args.delay}ms | Max: {max_fps_text} | Resize: {args.resize if args.resize > 0 else 'Ori'}", (255, 255, 0))
+                ]
+
+                # 从右下角向上绘制
+                for i, (text, color) in enumerate(reversed(texts)):
+                    text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
+                    text_x = w_frame - text_size[0] - 10
+                    text_y = h_frame - 10 - (i * line_height)
+
+                    cv2.putText(
+                        annotated_frame,
+                        text,
+                        (text_x, text_y),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        font_scale,
+                        color,
+                        thickness
+                    )
 
                 # 显示窗口
                 if not args.no_display:
