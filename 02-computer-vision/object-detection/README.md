@@ -1,4 +1,10 @@
-# YOLOv8 实时人形检测
+# YOLOv8 实时人形检测 / YOLOv8 Real-time Person Detection
+
+[English](#english) | [中文](#中文)
+
+---
+
+## 中文
 
 基于 YOLOv8 + OpenVINO 的实时人形检测项目，支持 CPU、GPU、NPU 多种推理设备。
 
@@ -190,3 +196,198 @@ OpenVINO 会自动针对 Intel 硬件优化模型结构和推理流程。
 - [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) - 目标检测模型
 - [OpenVINO](https://github.com/openvinotoolkit/openvino) - Intel 推理加速工具包
 - [OpenCV](https://opencv.org/) - 计算机视觉库
+
+---
+
+## English
+
+Real-time person detection project based on YOLOv8 + OpenVINO, supporting CPU, GPU, and NPU inference devices.
+
+## ✨ Features
+
+- 🎯 **Multi-device Support**: CPU / GPU (Intel Arc) / NPU (Intel AI Boost)
+- 🚀 **GPU Acceleration**: Optimized with OpenVINO, achieving 27+ FPS
+- 📸 **Real-time Detection**: Live webcam person detection
+- 🖼️ **Image Detection**: Batch image processing support
+- 📊 **Performance Benchmarking**: Built-in multi-device comparison tool
+- ⌨️ **Interactive Controls**: ESC/q to quit, s for screenshot, space to pause
+
+## 🎥 Performance
+
+| Device | Image Inference | Real-time Webcam | Speedup |
+|--------|----------------|------------------|---------|
+| **GPU** (Intel Arc) | 84.9 FPS | 27 FPS | 2.86x ⭐ Recommended |
+| **NPU** (AI Boost) | 79.3 FPS | 19 FPS | 2.67x |
+| **CPU** (Ultra 9) | 29.7 FPS | 16 FPS | 1.00x |
+
+> **Note**: Image inference is pure inference performance, real-time webcam includes full pipeline (capture + inference + post-processing + display)
+
+## 📦 Requirements
+
+- Python 3.14+
+- Intel Core Ultra processor (with GPU/NPU support)
+- Windows 10/11
+- Webcam (for real-time detection)
+
+## 🚀 Quick Start
+
+### 1. Setup Environment
+
+```bash
+# Activate virtual environment
+venv\Scripts\activate
+
+# Installed packages:
+# - ultralytics 8.4.6
+# - openvino 2025.4.1
+# - opencv-python 4.13.0.90
+# - torch 2.9.1+cpu
+```
+
+### 2. Run Detection
+
+#### Image Detection (Recommended for beginners)
+
+```bash
+# GPU accelerated detection
+python detect_gpu.py
+
+# Pure OpenVINO inference (performance testing)
+python detect_openvino.py
+```
+
+#### Real-time Webcam Detection
+
+```bash
+# GPU version (Recommended, fastest)
+python webcam_gpu.py
+
+# NPU version (Experience Intel AI Boost)
+python webcam_npu_direct.py
+
+# CPU version
+python webcam_cpu.py
+```
+
+#### Performance Benchmark
+
+```bash
+# Test all devices
+python test_npu.py
+```
+
+## ⌨️ Controls
+
+All webcam detection programs support:
+
+- **ESC or q** - Exit program
+- **s** - Save screenshot
+- **Space** - Pause/Resume
+- **+/-** - Adjust confidence threshold (some versions)
+
+## 🐛 Common Issues
+
+### Window Won't Close?
+
+Use emergency shutdown script:
+
+```bash
+# Force kill all Python processes
+kill_webcam.bat
+```
+
+Or manually:
+
+```bash
+taskkill /F /IM python.exe
+```
+
+### Camera Won't Open?
+
+1. Check if camera is used by another program
+2. Check camera permissions in Windows Privacy Settings
+3. Try restarting the system
+
+### NPU Performance Lower Than Expected?
+
+NPU (Intel AI Boost) is optimized for low-power scenarios (e.g., video call background blur). For high-throughput tasks like YOLO, **GPU is the better choice**.
+
+## 📁 Project Files
+
+### Core Detection Scripts
+
+- `detect_gpu.py` - GPU accelerated image detection
+- `detect_openvino.py` - OpenVINO direct inference
+- `webcam_gpu.py` - GPU real-time webcam detection ⭐
+- `webcam_npu_direct.py` - NPU real-time detection
+- `webcam_cpu.py` - CPU real-time detection
+- `test_npu.py` - Multi-device performance comparison
+
+### Utility Scripts
+
+- `kill_webcam.bat` - Emergency shutdown script
+
+### Model Files
+
+- `yolov8n.pt` - YOLOv8 nano PyTorch model
+- `yolov8n_openvino_model/` - OpenVINO optimized model (auto-generated on first run)
+
+## 🔧 Technical Details
+
+### Hardware Acceleration
+
+- **GPU**: Intel Arc iGPU, accelerated via OpenVINO GPU plugin
+- **NPU**: Intel AI Boost (integrated NPU), suitable for low-power AI tasks
+- **CPU**: Intel Core Ultra 9 185H, 16 cores
+
+### Model Optimization
+
+Converting YOLOv8 model to OpenVINO IR format:
+
+```python
+model = YOLO('yolov8n.pt')
+model.export(format='openvino', half=False)
+```
+
+OpenVINO automatically optimizes model structure and inference pipeline for Intel hardware.
+
+## 📊 Detection Capabilities
+
+Pre-trained on COCO dataset, can detect 80 object classes including:
+
+- **Person** (person) - Primary detection target
+- Vehicles: car, bicycle, bus, truck, motorcycle
+- Animals: dog, cat, bird, horse
+- Daily objects: chair, bottle, laptop, phone
+
+## 🎯 Recommended Usage
+
+| Scenario | Recommended Device | Script |
+|----------|-------------------|--------|
+| Daily Use | GPU | `webcam_gpu.py` |
+| Performance Test | ALL | `test_npu.py` |
+| Batch Processing | GPU | `detect_gpu.py` |
+| Low-power Scenario | NPU | `webcam_npu_direct.py` |
+
+## 📝 Changelog
+
+### v1.0.0 (2026-01-20)
+
+**Initial Release**
+
+- ✅ CPU/GPU/NPU multi-device support
+- ✅ GPU acceleration achieving 27 FPS real-time detection
+- ✅ Fixed Windows window closing issue
+- ✅ Added performance comparison tool
+- ✅ Improved error handling and user prompts
+- ✅ Privacy protection: personal images/videos not uploaded to GitHub
+
+## 📄 License
+
+This project is for educational purposes only.
+
+## 🙏 Acknowledgments
+
+- [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) - Object detection model
+- [OpenVINO](https://github.com/openvinotoolkit/openvino) - Intel inference acceleration toolkit
+- [OpenCV](https://opencv.org/) - Computer vision library
