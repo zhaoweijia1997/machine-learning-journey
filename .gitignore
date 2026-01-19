@@ -37,7 +37,7 @@ wheels/
 *.tflite
 *.caffemodel
 
-# 数据集（大文件不提交）
+# 数据集和个人图片/视频（大文件不提交）
 datasets/**/*.jpg
 datasets/**/*.jpeg
 datasets/**/*.png
@@ -45,6 +45,16 @@ datasets/**/*.mp4
 datasets/**/*.avi
 datasets/**/*.zip
 datasets/**/*.tar.gz
+
+# 检测项目中的个人图片和结果（隐私保护）
+02-computer-vision/object-detection/*.jpg
+02-computer-vision/object-detection/*.jpeg
+02-computer-vision/object-detection/*.png
+02-computer-vision/object-detection/*.mp4
+02-computer-vision/object-detection/*.avi
+02-computer-vision/object-detection/snapshot_*.jpg
+02-computer-vision/object-detection/result_*.jpg
+02-computer-vision/object-detection/gpu_snapshot_*.jpg
 
 # 但保留数据集的说明文件
 !datasets/**/README.md
