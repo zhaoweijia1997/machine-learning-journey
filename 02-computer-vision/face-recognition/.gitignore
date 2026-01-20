@@ -1,0 +1,12 @@
+# 模型文件 (会自动下载)
+face_db/models/*.bin
+face_db/models/*.xml
+
+# 人脸数据库 (隐私数据)
+face_db/embeddings.pkl
+face_db/face_info.json
+face_db/photos/
+
+# Python
+__pycache__/
+*.pyc
