@@ -1,0 +1,30 @@
+# 机器学习学习之旅 - 依赖包列表
+# 安装命令: pip install -r requirements.txt
+
+# ============ 核心依赖 ============
+numpy>=1.24.0
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# ============ 深度学习框架 ============
+torch>=2.0.0
+torchvision>=0.15.0
+openvino>=2024.0.0
+
+# ============ 计算机视觉 ============
+ultralytics>=8.0.0          # YOLOv8
+
+# ============ 屏幕捕获 ============
+mss>=9.0.0                  # 跨平台屏幕捕获
+# dxcam                     # Windows GPU 加速捕获 (可选)
+
+# ============ GUI ============
+# tkinter 是 Python 内置的，无需安装
+
+# ============ 工具库 ============
+matplotlib>=3.7.0           # 可视化
+tqdm>=4.65.0               # 进度条
+
+# ============ 可选依赖 ============
+# jupyter                   # Jupyter Notebook
+# ipywidgets                # Notebook 交互组件
