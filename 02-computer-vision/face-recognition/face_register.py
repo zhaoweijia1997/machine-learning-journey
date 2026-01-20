@@ -64,7 +64,7 @@ class FaceAnalyzerOV:
             try:
                 urllib.request.urlretrieve(f"{base_url}{model_name}.xml", model_path)
                 urllib.request.urlretrieve(f"{base_url}{model_name}.bin", bin_path)
-                print(f"  ✓ {model_name} 下载完成")
+                print(f"  [OK] {model_name} 下载完成")
             except Exception as e:
                 print(f"  下载失败: {e}")
                 raise

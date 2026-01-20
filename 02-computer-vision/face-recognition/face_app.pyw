@@ -86,8 +86,10 @@ class FaceRecognitionApp:
         left_frame = ttk.Frame(main_frame)
         left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        self.canvas = tk.Canvas(left_frame, bg='black')
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+        # 使用 Label 代替 Canvas，更稳定不闪烁
+        self.video_label = tk.Label(left_frame, bg='black')
+        self.video_label.pack(fill=tk.BOTH, expand=True)
+        self.photo = None  # 保持引用防止被垃圾回收
 
         # 右侧 - 控制面板
         right_frame = ttk.Frame(main_frame, width=280)
@@ -224,6 +226,7 @@ class FaceRecognitionApp:
         """捕获主循环"""
         cap = None
         dxcam_camera = None
+        last_frame = None  # 保留上一帧，避免闪烁
 
         while self.running:
             # 检查模式切换请求
@@ -243,18 +246,16 @@ class FaceRecognitionApp:
                 self.mode_switch_request = None
 
                 if self.mode == "camera":
-                    cap = cv2.VideoCapture(0)
+                    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # 使用 DirectShow
                     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
                     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-                    self.root.after(0, lambda: self.status_label.config(text="摄像头模式"))
+                    if cap.isOpened():
+                        self.root.after(0, lambda: self.status_label.config(text="摄像头模式"))
+                    else:
+                        self.root.after(0, lambda: self.status_label.config(text="摄像头打开失败"))
                 elif self.mode == "screen":
-                    if HAS_DXCAM:
-                        try:
-                            dxcam_camera = dxcam.create(output_idx=self.current_monitor)
-                            dxcam_camera.start(target_fps=30)
-                        except Exception as e:
-                            print(f"DXCam 初始化失败: {e}")
-                            dxcam_camera = None
+                    # 屏幕模式直接使用 MSS，更稳定
+                    dxcam_camera = None  # 不使用 DXCam，避免闪烁
                     self.root.after(0, lambda: self.status_label.config(text=f"屏幕模式 (显示器 {self.current_monitor})"))
 
             # 获取帧
@@ -262,22 +263,35 @@ class FaceRecognitionApp:
             if self.mode == "camera" and cap:
                 ret, frame = cap.read()
                 if not ret:
-                    continue
+                    frame = last_frame  # 使用上一帧
+                elif frame is not None:
+                    frame = cv2.flip(frame, 1)  # 水平镜像
             elif self.mode == "screen":
-                if dxcam_camera:
-                    frame = dxcam_camera.get_latest_frame()
-                    if frame is not None:
-                        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                elif HAS_MSS:
-                    with mss.mss() as sct:
-                        monitor = sct.monitors[self.current_monitor + 1]
-                        screenshot = sct.grab(monitor)
-                        frame = np.array(screenshot)
-                        frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+                # 使用 MSS 捕获屏幕（更稳定）
+                if HAS_MSS:
+                    try:
+                        with mss.mss() as sct:
+                            monitors = sct.monitors
+                            if self.current_monitor + 1 < len(monitors):
+                                monitor = monitors[self.current_monitor + 1]
+                            else:
+                                monitor = monitors[1]  # 默认主显示器
+                            screenshot = sct.grab(monitor)
+                            frame = np.array(screenshot)
+                            frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+                    except Exception as e:
+                        frame = last_frame
 
+            # 如果获取失败，使用上一帧
             if frame is None:
-                time.sleep(0.01)
-                continue
+                if last_frame is not None:
+                    frame = last_frame
+                else:
+                    time.sleep(0.01)
+                    continue
+
+            # 保存当前帧
+            last_frame = frame.copy()
 
             # 缩放大帧以提高处理速度
             h, w = frame.shape[:2]
@@ -302,10 +316,8 @@ class FaceRecognitionApp:
                 self.frame_count = 0
                 self.last_frame_time = time.time()
 
-            # 更新显示
-            self._update_display(display_frame, results)
-
-            time.sleep(0.01)
+            # 使用 after 在主线程更新显示（更稳定）
+            self.root.after(0, lambda f=display_frame, r=results: self._update_display(f, r))
 
         # 清理
         if cap:
@@ -317,8 +329,23 @@ class FaceRecognitionApp:
                 pass
 
     def _draw_results(self, frame, results):
-        """绘制识别结果"""
-        display = frame.copy()
+        """绘制识别结果 - 支持中文"""
+        # 转换为 PIL 图像以支持中文
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(frame_rgb)
+        draw = ImageDraw.Draw(pil_image)
+
+        # 尝试加载中文字体
+        try:
+            font = ImageFont.truetype("msyh.ttc", 20)  # 微软雅黑
+            font_small = ImageFont.truetype("msyh.ttc", 16)
+        except:
+            try:
+                font = ImageFont.truetype("simhei.ttf", 20)  # 黑体
+                font_small = ImageFont.truetype("simhei.ttf", 16)
+            except:
+                font = ImageFont.load_default()
+                font_small = font
 
         for result in results:
             bbox = result["bbox"]
@@ -326,62 +353,78 @@ class FaceRecognitionApp:
             title = result.get("title", "")
             confidence = result["confidence"]
 
-            # 颜色: 已知-绿色, 未知-红色
-            color = (0, 255, 0) if name != "未知" else (0, 0, 255)
+            # 颜色: 已知-绿色, 未知-红色 (RGB)
+            color = (0, 255, 0) if name != "未知" else (255, 0, 0)
 
             # 绘制边框
-            cv2.rectangle(display, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color, 2)
+            draw.rectangle([bbox[0], bbox[1], bbox[2], bbox[3]], outline=color, width=2)
 
-            # 绘制标签背景
+            # 构建标签
             label = f"{name}"
             if title:
                 label += f" ({title})"
             if confidence > 0:
                 label += f" {confidence:.0%}"
 
-            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-            cv2.rectangle(display, (bbox[0], bbox[1] - 25),
-                         (bbox[0] + label_size[0] + 10, bbox[1]), color, -1)
+            # 计算文字大小
+            text_bbox = draw.textbbox((0, 0), label, font=font)
+            text_width = text_bbox[2] - text_bbox[0]
+            text_height = text_bbox[3] - text_bbox[1]
+
+            # 绘制标签背景
+            label_y = bbox[1] - text_height - 8
+            if label_y < 0:
+                label_y = bbox[3] + 4
+            draw.rectangle([bbox[0], label_y, bbox[0] + text_width + 10, label_y + text_height + 6],
+                          fill=color)
 
             # 绘制文字
-            cv2.putText(display, label, (bbox[0] + 5, bbox[1] - 7),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            draw.text((bbox[0] + 5, label_y + 2), label, fill=(255, 255, 255), font=font)
 
         # 录入模式提示
         if self.register_mode:
-            cv2.putText(display, f"REGISTER MODE: {self.register_name}", (10, 30),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-            cv2.putText(display, "Press S to capture", (10, 60),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+            draw.text((10, 10), f"录入模式: {self.register_name}", fill=(0, 255, 255), font=font)
+            draw.text((10, 40), "按 S 键拍照", fill=(200, 200, 200), font=font_small)
 
+        # 转回 OpenCV 格式
+        display = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
         return display
 
     def _update_display(self, frame, results):
         """更新显示"""
+        # 获取 Label 尺寸
+        label_width = self.video_label.winfo_width()
+        label_height = self.video_label.winfo_height()
+
+        if label_width < 10 or label_height < 10:
+            return
+
+        # 使用 OpenCV 快速缩放
+        h, w = frame.shape[:2]
+        img_ratio = w / h
+        label_ratio = label_width / label_height
+
+        if img_ratio > label_ratio:
+            new_width = label_width
+            new_height = int(label_width / img_ratio)
+        else:
+            new_height = label_height
+            new_width = int(label_height * img_ratio)
+
+        # 确保尺寸有效
+        new_width = max(1, new_width)
+        new_height = max(1, new_height)
+
+        # 使用 INTER_LINEAR 快速缩放
+        resized = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
+
         # 转换为 PIL 图像
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(frame_rgb)
 
-        # 缩放以适应画布
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
-
-        if canvas_width > 1 and canvas_height > 1:
-            img_ratio = image.width / image.height
-            canvas_ratio = canvas_width / canvas_height
-
-            if img_ratio > canvas_ratio:
-                new_width = canvas_width
-                new_height = int(canvas_width / img_ratio)
-            else:
-                new_height = canvas_height
-                new_width = int(canvas_height * img_ratio)
-
-            image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-
+        # 更新 Label 显示
         self.photo = ImageTk.PhotoImage(image)
-        self.canvas.delete("all")
-        self.canvas.create_image(canvas_width // 2, canvas_height // 2, image=self.photo)
+        self.video_label.configure(image=self.photo)
 
         # 更新状态
         self.fps_label.config(text=f"FPS: {self.fps:.1f}")
