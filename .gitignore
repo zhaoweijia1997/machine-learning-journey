@@ -37,6 +37,12 @@ wheels/
 *.tflite
 *.caffemodel
 
+# OpenVINO 大模型文件 (>50MB)
+*.bin
+# 保留小模型的 .bin
+!**/yolov8n*.bin
+!**/yolov8n-pose*.bin
+
 # 数据集和个人图片/视频（大文件不提交）
 datasets/**/*.jpg
 datasets/**/*.jpeg
