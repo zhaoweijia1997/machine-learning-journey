@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第3课：损失函数 - 交互式演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel h2 {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: #ffd93d;
+        }
+
+        /* 数据表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        .data-table th, .data-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .data-table th {
+            color: #ffd93d;
+            font-weight: normal;
+        }
+
+        .label-good {
+            color: #00ff88;
+        }
+
+        .label-bad {
+            color: #ff6b6b;
+        }
+
+        .pred-cell {
+            font-family: monospace;
+        }
+
+        .error-cell {
+            font-family: monospace;
+            color: #ff9f43;
+        }
+
+        .check-ok {
+            color: #00ff88;
+        }
+
+        .check-wrong {
+            color: #ff6b6b;
+        }
+
+        /* 损失显示 */
+        .loss-display {
+            text-align: center;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .loss-value {
+            font-size: 3em;
+            font-weight: bold;
+            font-family: monospace;
+            margin: 15px 0;
+        }
+
+        .loss-good {
+            color: #00ff88;
+        }
+
+        .loss-medium {
+            color: #ffd93d;
+        }
+
+        .loss-bad {
+            color: #ff6b6b;
+        }
+
+        .loss-bar {
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .loss-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s, background 0.5s;
+        }
+
+        /* 权重控制 */
+        .weight-controls {
+            margin-top: 20px;
+        }
+
+        .weight-group {
+            margin-bottom: 15px;
+        }
+
+        .weight-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #aaa;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffd93d;
+            cursor: pointer;
+        }
+
+        .weight-value {
+            min-width: 50px;
+            text-align: right;
+            font-family: monospace;
+            color: #ffd93d;
+        }
+
+        /* 按钮 */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .btn-random {
+            background: #ff6b6b;
+            color: #fff;
+        }
+
+        .btn-better {
+            background: #00ff88;
+            color: #000;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        /* 公式展示 */
+        .formula-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.9em;
+            line-height: 1.8;
+        }
+
+        /* 说明区 */
+        .explanation {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .explanation h3 {
+            color: #ffd93d;
+            margin-bottom: 15px;
+        }
+
+        .explanation p {
+            line-height: 1.8;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        .key-point {
+            background: rgba(255, 217, 61, 0.1);
+            border-left: 3px solid #ffd93d;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        /* 可视化对比 */
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .compare-item {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .compare-item h4 {
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .compare-loss {
+            font-size: 1.8em;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📉 第3课：损失函数</h1>
+        <p class="subtitle">衡量预测有多"错" - 训练的指南针</p>
+
+        <div class="main-grid">
+            <!-- 左侧：数据和预测 -->
+            <div class="panel">
+                <h2>📊 训练数据与预测</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>水果</th>
+                            <th>真实标签</th>
+                            <th>网络预测</th>
+                            <th>误差²</th>
+                            <th>判断</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        <!-- 动态生成 -->
+                    </tbody>
+                </table>
+
+                <div class="formula-box">
+                    <strong>MSE 公式：</strong><br>
+                    Loss = (1/n) × Σ(预测 - 真实)²<br><br>
+                    <span id="lossCalculation"></span>
+                </div>
+            </div>
+
+            <!-- 右侧：损失显示 -->
+            <div class="panel">
+                <h2>📉 总损失 (MSE)</h2>
+                <div class="loss-display">
+                    <div>损失值</div>
+                    <div class="loss-value" id="lossValue">0.1234</div>
+                    <div id="lossComment">损失越小越好</div>
+                    <div class="loss-bar">
+                        <div class="loss-fill" id="lossFill"></div>
+                    </div>
+                </div>
+
+                <h2>🎛️ 调整输出层权重</h2>
+                <div class="weight-controls" id="weightControls">
+                    <!-- 动态生成 -->
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-random" onclick="randomWeights()">🎲 随机权重</button>
+                    <button class="btn btn-better" onclick="betterWeights()">✨ 优化权重</button>
+                </div>
+            </div>
+
+            <!-- 对比展示 -->
+            <div class="panel explanation">
+                <h3>💡 理解损失函数</h3>
+
+                <div class="comparison">
+                    <div class="compare-item">
+                        <h4>🎯 理想情况</h4>
+                        <div class="compare-loss loss-good">0.0000</div>
+                        <p style="font-size:0.85em; margin-top:10px; color:#888;">
+                            预测完全正确<br>每个样本误差为0
+                        </p>
+                    </div>
+                    <div class="compare-item">
+                        <h4>❌ 最差情况</h4>
+                        <div class="compare-loss loss-bad">1.0000</div>
+                        <p style="font-size:0.85em; margin-top:10px; color:#888;">
+                            预测完全相反<br>好吃的说不好吃
+                        </p>
+                    </div>
+                </div>
+
+                <div class="key-point">
+                    <strong>核心思想：</strong><br>
+                    损失函数是训练的"指南针"。它告诉我们当前权重的好坏。<br>
+                    训练的目标 = 调整权重，让损失尽可能小。
+                </div>
+
+                <p>
+                    <strong>试试看：</strong>拖动上方的权重滑块，观察损失值的变化。
+                    你能找到让损失最小的权重组合吗？
+                </p>
+                <p>
+                    <strong>思考：</strong>手动调整很麻烦对吧？下一课会学习"梯度下降"——
+                    让计算机自动找到最优权重！
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 训练数据
+        const trainingData = [
+            { name: '🍓 完美草莓', features: [0.9, 0.3, 0.95], label: 1 },
+            { name: '🍊 甜橙子', features: [0.85, 0.5, 0.7], label: 1 },
+            { name: '🍋 酸柠檬', features: [0.2, 0.95, 0.8], label: 0 },
+            { name: '🍎 烂苹果', features: [0.5, 0.4, 0.1], label: 0 },
+        ];
+
+        // 网络参数（隐藏层固定，只调整输出层）
+        const W1 = [
+            [0.8, -0.5, 0.3, 0.6],
+            [0.2, 0.9, -0.7, 0.1],
+            [0.5, 0.3, 0.8, 0.4]
+        ];
+        const b1 = [-0.3, -0.4, 0.1, -0.2];
+
+        // 输出层权重（可调整）
+        let W2 = [0.6, 0.4, 0.5, 0.3];
+        let b2 = -0.5;
+
+        function sigmoid(x) {
+            return 1 / (1 + Math.exp(-x));
+        }
+
+        function forward(features) {
+            // 隐藏层
+            const hidden = [];
+            for (let j = 0; j < 4; j++) {
+                let sum = b1[j];
+                for (let i = 0; i < 3; i++) {
+                    sum += features[i] * W1[i][j];
+                }
+                hidden.push(sigmoid(sum));
+            }
+            // 输出层
+            let outputSum = b2;
+            for (let j = 0; j < 4; j++) {
+                outputSum += hidden[j] * W2[j];
+            }
+            return sigmoid(outputSum);
+        }
+
+        function calculateMSE() {
+            let total = 0;
+            for (const data of trainingData) {
+                const pred = forward(data.features);
+                const error = Math.pow(pred - data.label, 2);
+                total += error;
+            }
+            return total / trainingData.length;
+        }
+
+        function updateDisplay() {
+            // 更新数据表格
+            const tbody = document.getElementById('dataTable');
+            let html = '';
+            let lossCalc = '';
+            let totalError = 0;
+
+            for (const data of trainingData) {
+                const pred = forward(data.features);
+                const error = Math.pow(pred - data.label, 2);
+                totalError += error;
+
+                const predLabel = pred > 0.5 ? 1 : 0;
+                const correct = predLabel === data.label;
+
+                html += `
+                    <tr>
+                        <td>${data.name}</td>
+                        <td class="${data.label ? 'label-good' : 'label-bad'}">
+                            ${data.label} (${data.label ? '好吃' : '不好吃'})
+                        </td>
+                        <td class="pred-cell">${(pred * 100).toFixed(1)}%</td>
+                        <td class="error-cell">${error.toFixed(4)}</td>
+                        <td class="${correct ? 'check-ok' : 'check-wrong'}">
+                            ${correct ? '✓' : '✗'}
+                        </td>
+                    </tr>
+                `;
+
+                lossCalc += `(${pred.toFixed(3)} - ${data.label})² = ${error.toFixed(4)}<br>`;
+            }
+
+            tbody.innerHTML = html;
+
+            const mse = totalError / trainingData.length;
+            lossCalc += `<br><strong>平均 = ${mse.toFixed(4)}</strong>`;
+            document.getElementById('lossCalculation').innerHTML = lossCalc;
+
+            // 更新损失显示
+            document.getElementById('lossValue').textContent = mse.toFixed(4);
+
+            const lossPercent = Math.min(mse * 100, 100);
+            const fill = document.getElementById('lossFill');
+            fill.style.width = lossPercent + '%';
+
+            const valueEl = document.getElementById('lossValue');
+            const comment = document.getElementById('lossComment');
+
+            if (mse < 0.05) {
+                valueEl.className = 'loss-value loss-good';
+                fill.style.background = '#00ff88';
+                comment.textContent = '太棒了！预测非常准确！';
+            } else if (mse < 0.15) {
+                valueEl.className = 'loss-value loss-medium';
+                fill.style.background = '#ffd93d';
+                comment.textContent = '还不错，继续优化';
+            } else {
+                valueEl.className = 'loss-value loss-bad';
+                fill.style.background = '#ff6b6b';
+                comment.textContent = '损失较大，需要调整权重';
+            }
+        }
+
+        function createWeightControls() {
+            const container = document.getElementById('weightControls');
+            let html = '';
+
+            for (let i = 0; i < 4; i++) {
+                html += `
+                    <div class="weight-group">
+                        <label>W2[${i}] - 隐藏神经元${i+1}的权重</label>
+                        <div class="slider-row">
+                            <input type="range" id="w2_${i}" min="-2" max="2" step="0.1"
+                                   value="${W2[i]}" onchange="updateWeight(${i}, this.value)">
+                            <span class="weight-value" id="w2v_${i}">${W2[i].toFixed(1)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="weight-group">
+                    <label>b2 - 输出层偏置</label>
+                    <div class="slider-row">
+                        <input type="range" id="b2" min="-2" max="2" step="0.1"
+                               value="${b2}" onchange="updateBias(this.value)">
+                        <span class="weight-value" id="b2v">${b2.toFixed(1)}</span>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function updateWeight(index, value) {
+            W2[index] = parseFloat(value);
+            document.getElementById(`w2v_${index}`).textContent = parseFloat(value).toFixed(1);
+            updateDisplay();
+        }
+
+        function updateBias(value) {
+            b2 = parseFloat(value);
+            document.getElementById('b2v').textContent = parseFloat(value).toFixed(1);
+            updateDisplay();
+        }
+
+        function randomWeights() {
+            for (let i = 0; i < 4; i++) {
+                W2[i] = (Math.random() - 0.5) * 2;
+                document.getElementById(`w2_${i}`).value = W2[i];
+                document.getElementById(`w2v_${i}`).textContent = W2[i].toFixed(1);
+            }
+            b2 = (Math.random() - 0.5) * 2;
+            document.getElementById('b2').value = b2;
+            document.getElementById('b2v').textContent = b2.toFixed(1);
+            updateDisplay();
+        }
+
+        function betterWeights() {
+            // 一组预设的较好权重
+            W2 = [1.5, -0.8, 1.2, 0.9];
+            b2 = -1.2;
+
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`w2_${i}`).value = W2[i];
+                document.getElementById(`w2v_${i}`).textContent = W2[i].toFixed(1);
+            }
+            document.getElementById('b2').value = b2;
+            document.getElementById('b2v').textContent = b2.toFixed(1);
+            updateDisplay();
+        }
+
+        // 初始化
+        createWeightControls();
+        updateDisplay();
+    </script>
+</body>
+</html>
