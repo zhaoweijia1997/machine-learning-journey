@@ -17,7 +17,7 @@
 | 课程 | 内容 | 资源 |
 |------|------|------|
 | ✅ 第1课 | 理解神经元：权重、偏置、激活函数 | [Python](01-neural-network-basics/lesson1_neuron.py) \| [交互网页](01-neural-network-basics/lesson1_interactive.html) |
-| ⏳ 第2课 | 多层网络：神经元如何组成层 | 待续 |
+| ✅ 第2课 | 多层网络：隐藏层的作用 | [Python](01-neural-network-basics/lesson2_layers.py) \| [交互网页](01-neural-network-basics/lesson2_interactive.html) \| [学习指南](01-neural-network-basics/lesson2_guide.md) |
 | ⏳ 第3课 | 前向传播：数据如何流动 | 待续 |
 | ⏳ 第4课 | 反向传播与梯度下降：网络如何学习 | 待续 |
 

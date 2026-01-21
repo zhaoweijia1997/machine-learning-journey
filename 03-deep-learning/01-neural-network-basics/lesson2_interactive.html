@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第2课：多层神经网络 - 交互式演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 280px 1fr 200px;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel h2 {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: #00d9ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 输入控制 */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #00d9ff;
+            cursor: pointer;
+        }
+
+        .value-display {
+            min-width: 45px;
+            text-align: right;
+            font-family: monospace;
+            color: #00ff88;
+        }
+
+        /* 神经网络可视化 */
+        .network-viz {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #networkCanvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 输出面板 */
+        .output-panel .result {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .result-score {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .result-label {
+            font-size: 1.2em;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .result-good {
+            background: linear-gradient(90deg, #00ff88, #00d9ff);
+            color: #000;
+        }
+
+        .result-ok {
+            background: linear-gradient(90deg, #ffaa00, #ff6600);
+            color: #000;
+        }
+
+        .result-bad {
+            background: linear-gradient(90deg, #ff4444, #cc0000);
+            color: #fff;
+        }
+
+        /* 隐藏层详情 */
+        .hidden-details {
+            margin-top: 15px;
+        }
+
+        .hidden-neuron {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+        }
+
+        .neuron-bar {
+            flex: 1;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            margin-left: 10px;
+            overflow: hidden;
+        }
+
+        .neuron-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+
+        /* 预设水果 */
+        .presets {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .preset-btn {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-align: center;
+        }
+
+        .preset-btn:hover {
+            background: rgba(0, 217, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .preset-btn .emoji {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* 说明区 */
+        .explanation {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .explanation h3 {
+            color: #00d9ff;
+            margin-bottom: 15px;
+        }
+
+        .explanation p {
+            line-height: 1.8;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        /* 层标签 */
+        .layer-labels {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 第2课：多层神经网络</h1>
+        <p class="subtitle">判断水果好不好吃 - 理解隐藏层的作用</p>
+
+        <div class="main-content">
+            <!-- 左侧：输入控制 -->
+            <div class="panel">
+                <h2>🍎 输入特征</h2>
+
+                <div class="input-group">
+                    <label>🍯 甜度</label>
+                    <div class="slider-container">
+                        <input type="range" id="sweetness" min="0" max="100" value="80">
+                        <span class="value-display" id="sweetnessValue">0.80</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>🍋 酸度</label>
+                    <div class="slider-container">
+                        <input type="range" id="sourness" min="0" max="100" value="30">
+                        <span class="value-display" id="sournessValue">0.30</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>✨ 新鲜度</label>
+                    <div class="slider-container">
+                        <input type="range" id="freshness" min="0" max="100" value="90">
+                        <span class="value-display" id="freshnessValue">0.90</span>
+                    </div>
+                </div>
+
+                <h2 style="margin-top: 25px;">🍇 预设水果</h2>
+                <div class="presets">
+                    <button class="preset-btn" onclick="setPreset(0.9, 0.3, 0.95)">
+                        <span class="emoji">🍓</span>
+                        完美草莓
+                    </button>
+                    <button class="preset-btn" onclick="setPreset(0.2, 0.95, 0.8)">
+                        <span class="emoji">🍋</span>
+                        酸柠檬
+                    </button>
+                    <button class="preset-btn" onclick="setPreset(0.5, 0.4, 0.1)">
+                        <span class="emoji">🍎</span>
+                        烂苹果
+                    </button>
+                    <button class="preset-btn" onclick="setPreset(0.85, 0.5, 0.7)">
+                        <span class="emoji">🍊</span>
+                        甜橙子
+                    </button>
+                </div>
+            </div>
+
+            <!-- 中间：网络可视化 -->
+            <div class="panel network-viz">
+                <h2>🔗 神经网络结构</h2>
+                <canvas id="networkCanvas" width="600" height="400"></canvas>
+                <div class="layer-labels">
+                    <span>输入层 (3)</span>
+                    <span>隐藏层 (4)</span>
+                    <span>输出层 (1)</span>
+                </div>
+            </div>
+
+            <!-- 右侧：输出 -->
+            <div class="panel output-panel">
+                <h2>📊 判断结果</h2>
+
+                <div class="result">
+                    <div>好吃程度</div>
+                    <div class="result-score" id="outputScore">75%</div>
+                    <div class="result-label result-good" id="outputLabel">好吃！</div>
+                </div>
+
+                <h2>🔍 隐藏层输出</h2>
+                <div class="hidden-details" id="hiddenDetails">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 说明区 -->
+        <div class="explanation">
+            <h3>💡 为什么需要隐藏层？</h3>
+            <p>
+                <strong>单个神经元的局限：</strong>只能学习"线性"关系，比如"越甜越好"。
+            </p>
+            <p>
+                <strong>现实问题的复杂性：</strong>"酸度适中最好"是非线性关系——太酸不好，不酸也不好，适中最好。
+            </p>
+            <p>
+                <strong>隐藏层的作用：</strong>每个隐藏神经元学习一种"特征组合"，多个神经元协作就能处理复杂的非线性问题！
+            </p>
+
+            <div class="formula">
+隐藏层: H = sigmoid(输入 × W₁ + b₁)  →  4个神经元各自计算<br>
+输出层: O = sigmoid(H × W₂ + b₂)     →  综合4个结果得出最终判断
+            </div>
+
+            <p>
+                <strong>观察实验：</strong>调整酸度从0到1，看隐藏层各神经元的变化。
+                你会发现它们对酸度的反应各不相同——有的喜欢酸，有的讨厌酸，组合起来就能表达"适中最好"！
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 神经网络参数（与 Python 代码一致）
+        const W1 = [
+            [0.8, -0.5, 0.3, 0.6],
+            [0.2, 0.9, -0.7, 0.1],
+            [0.5, 0.3, 0.8, 0.4]
+        ];
+        const b1 = [-0.3, -0.4, 0.1, -0.2];
+        const W2 = [0.6, 0.4, 0.5, 0.3];
+        const b2 = -0.5;
+
+        // Sigmoid 函数
+        function sigmoid(x) {
+            return 1 / (1 + Math.exp(-x));
+        }
+
+        // 前向传播
+        function forward(inputs) {
+            // 隐藏层
+            const hidden = [];
+            for (let j = 0; j < 4; j++) {
+                let sum = b1[j];
+                for (let i = 0; i < 3; i++) {
+                    sum += inputs[i] * W1[i][j];
+                }
+                hidden.push(sigmoid(sum));
+            }
+
+            // 输出层
+            let outputSum = b2;
+            for (let j = 0; j < 4; j++) {
+                outputSum += hidden[j] * W2[j];
+            }
+            const output = sigmoid(outputSum);
+
+            return { hidden, output };
+        }
+
+        // 获取输入值
+        function getInputs() {
+            return [
+                document.getElementById('sweetness').value / 100,
+                document.getElementById('sourness').value / 100,
+                document.getElementById('freshness').value / 100
+            ];
+        }
+
+        // 更新显示
+        function update() {
+            const inputs = getInputs();
+
+            // 更新输入值显示
+            document.getElementById('sweetnessValue').textContent = inputs[0].toFixed(2);
+            document.getElementById('sournessValue').textContent = inputs[1].toFixed(2);
+            document.getElementById('freshnessValue').textContent = inputs[2].toFixed(2);
+
+            // 前向传播
+            const { hidden, output } = forward(inputs);
+
+            // 更新输出显示
+            const scorePercent = Math.round(output * 100);
+            document.getElementById('outputScore').textContent = scorePercent + '%';
+
+            const labelEl = document.getElementById('outputLabel');
+            if (output > 0.7) {
+                labelEl.textContent = '好吃！🍓';
+                labelEl.className = 'result-label result-good';
+            } else if (output > 0.4) {
+                labelEl.textContent = '一般般';
+                labelEl.className = 'result-label result-ok';
+            } else {
+                labelEl.textContent = '不好吃 😕';
+                labelEl.className = 'result-label result-bad';
+            }
+
+            // 更新隐藏层详情
+            const hiddenHTML = hidden.map((h, i) => {
+                const percent = Math.round(h * 100);
+                const hue = h * 120; // 0=红, 120=绿
+                return `
+                    <div class="hidden-neuron">
+                        <span>H${i + 1}</span>
+                        <div class="neuron-bar">
+                            <div class="neuron-fill" style="width: ${percent}%; background: hsl(${hue}, 70%, 50%)"></div>
+                        </div>
+                        <span style="min-width: 40px; text-align: right">${percent}%</span>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('hiddenDetails').innerHTML = hiddenHTML;
+
+            // 绘制网络
+            drawNetwork(inputs, hidden, output);
+        }
+
+        // 绘制神经网络
+        function drawNetwork(inputs, hidden, output) {
+            const canvas = document.getElementById('networkCanvas');
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const layerX = [100, 300, 500];
+            const inputY = [100, 200, 300];
+            const hiddenY = [80, 160, 240, 320];
+            const outputY = [200];
+
+            // 绘制连接线
+            ctx.lineWidth = 1;
+
+            // 输入 → 隐藏
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const weight = W1[i][j];
+                    const alpha = Math.abs(weight) * 0.5 + 0.1;
+                    ctx.strokeStyle = weight > 0
+                        ? `rgba(0, 255, 136, ${alpha})`
+                        : `rgba(255, 100, 100, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.moveTo(layerX[0] + 25, inputY[i]);
+                    ctx.lineTo(layerX[1] - 25, hiddenY[j]);
+                    ctx.stroke();
+                }
+            }
+
+            // 隐藏 → 输出
+            for (let j = 0; j < 4; j++) {
+                const weight = W2[j];
+                const alpha = Math.abs(weight) * 0.5 + 0.2;
+                ctx.strokeStyle = `rgba(0, 217, 255, ${alpha})`;
+                ctx.lineWidth = hidden[j] * 3 + 1;
+                ctx.beginPath();
+                ctx.moveTo(layerX[1] + 25, hiddenY[j]);
+                ctx.lineTo(layerX[2] - 25, outputY[0]);
+                ctx.stroke();
+            }
+
+            // 绘制节点
+            const inputLabels = ['甜度', '酸度', '新鲜'];
+
+            // 输入层
+            for (let i = 0; i < 3; i++) {
+                const brightness = inputs[i];
+                drawNode(ctx, layerX[0], inputY[i], 25, brightness, '#00d9ff');
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Microsoft YaHei';
+                ctx.textAlign = 'center';
+                ctx.fillText(inputLabels[i], layerX[0], inputY[i] + 45);
+                ctx.fillText(inputs[i].toFixed(2), layerX[0], inputY[i] + 5);
+            }
+
+            // 隐藏层
+            for (let j = 0; j < 4; j++) {
+                drawNode(ctx, layerX[1], hiddenY[j], 25, hidden[j], '#00ff88');
+                ctx.fillStyle = '#fff';
+                ctx.font = '11px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(hidden[j].toFixed(2), layerX[1], hiddenY[j] + 5);
+            }
+
+            // 输出层
+            drawNode(ctx, layerX[2], outputY[0], 35, output, '#ffaa00');
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(Math.round(output * 100) + '%', layerX[2], outputY[0] + 5);
+        }
+
+        function drawNode(ctx, x, y, r, value, color) {
+            // 外圈
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 0, 0, 0.5)`;
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 内圈（根据激活值填充）
+            const innerR = r * 0.7 * value + r * 0.2;
+            ctx.beginPath();
+            ctx.arc(x, y, innerR, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.3 + value * 0.7;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+
+        // 预设水果
+        function setPreset(sweetness, sourness, freshness) {
+            document.getElementById('sweetness').value = sweetness * 100;
+            document.getElementById('sourness').value = sourness * 100;
+            document.getElementById('freshness').value = freshness * 100;
+            update();
+        }
+
+        // 事件监听
+        ['sweetness', 'sourness', 'freshness'].forEach(id => {
+            document.getElementById(id).addEventListener('input', update);
+        });
+
+        // 初始化
+        update();
+    </script>
+</body>
+</html>
