@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第4课：梯度下降 - 交互式演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+            background: linear-gradient(90deg, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel h2 {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: #f5576c;
+        }
+
+        /* 画布 */
+        #lossCanvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* 控制区 */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f5576c;
+            cursor: pointer;
+        }
+
+        .value-display {
+            min-width: 50px;
+            text-align: right;
+            font-family: monospace;
+            color: #f093fb;
+        }
+
+        /* 按钮 */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-step {
+            background: linear-gradient(90deg, #f093fb, #f5576c);
+            color: #fff;
+        }
+
+        .btn-auto {
+            background: linear-gradient(90deg, #11998e, #38ef7d);
+            color: #fff;
+        }
+
+        .btn-reset {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 状态显示 */
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 1.5em;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .status-value.weight {
+            color: #f093fb;
+        }
+
+        .status-value.loss {
+            color: #f5576c;
+        }
+
+        .status-value.gradient {
+            color: #38ef7d;
+        }
+
+        .status-value.step {
+            color: #ffd93d;
+        }
+
+        /* 历史记录 */
+        .history {
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85em;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .history-item {
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* 说明区 */
+        .explanation {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .formula-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            font-family: monospace;
+            margin: 15px 0;
+            line-height: 2;
+        }
+
+        .key-point {
+            background: rgba(245, 87, 108, 0.1);
+            border-left: 3px solid #f5576c;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .explanation h3 {
+            color: #f5576c;
+            margin-bottom: 15px;
+        }
+
+        .explanation p {
+            line-height: 1.8;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        /* 问题设定 */
+        .problem-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .problem-box code {
+            color: #f093fb;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📉 第4课：梯度下降</h1>
+        <p class="subtitle">看着权重一步步找到最优值</p>
+
+        <div class="main-grid">
+            <!-- 左侧：可视化 -->
+            <div class="panel">
+                <h2>📈 损失曲线</h2>
+                <canvas id="lossCanvas" width="450" height="300"></canvas>
+
+                <div class="problem-box">
+                    <strong>问题设定：</strong><br>
+                    输入 <code>x = 2</code>，真实答案 <code>y = 2</code><br>
+                    预测公式：<code>y = x × w</code><br>
+                    最优权重：<code>w = 1</code>（因为 2×1=2）
+                </div>
+            </div>
+
+            <!-- 右侧：控制和状态 -->
+            <div class="panel">
+                <h2>🎛️ 训练控制</h2>
+
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">当前权重 w</div>
+                        <div class="status-value weight" id="currentW">0.00</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">损失值</div>
+                        <div class="status-value loss" id="currentLoss">4.00</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">梯度</div>
+                        <div class="status-value gradient" id="currentGrad">-8.00</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">训练轮次</div>
+                        <div class="status-value step" id="currentStep">0</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>🎯 初始权重 w₀</label>
+                    <div class="slider-row">
+                        <input type="range" id="initW" min="-2" max="4" step="0.1" value="0">
+                        <span class="value-display" id="initWValue">0.0</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>📏 学习率 (Learning Rate)</label>
+                    <div class="slider-row">
+                        <input type="range" id="lr" min="0.01" max="0.3" step="0.01" value="0.1">
+                        <span class="value-display" id="lrValue">0.10</span>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-step" onclick="step()">▶ 单步</button>
+                    <button class="btn btn-auto" id="autoBtn" onclick="toggleAuto()">⏩ 自动</button>
+                    <button class="btn btn-reset" onclick="reset()">🔄 重置</button>
+                </div>
+
+                <div class="history" id="history">
+                    <div style="color:#888;">训练历史将显示在这里...</div>
+                </div>
+            </div>
+
+            <!-- 说明区 -->
+            <div class="panel explanation">
+                <h3>💡 理解梯度下降</h3>
+
+                <div class="formula-box">
+                    <strong>核心公式：</strong><br><br>
+                    梯度 = ∂Loss/∂w = 2 × (预测 - 真实) × 输入<br><br>
+                    新权重 = 旧权重 - 学习率 × 梯度
+                </div>
+
+                <div class="key-point">
+                    <strong>为什么是"减"梯度？</strong><br>
+                    梯度指向损失<b>增大</b>的方向。我们要让损失<b>减小</b>，所以要往<b>反方向</b>走！
+                </div>
+
+                <p><strong>观察实验：</strong></p>
+                <ul style="margin-left: 20px; line-height: 2; color: #ccc;">
+                    <li>调小学习率(0.01)：收敛慢，但稳定</li>
+                    <li>调大学习率(0.25)：收敛快，但可能震荡</li>
+                    <li>学习率太大(>0.25)：可能发散！</li>
+                </ul>
+
+                <p style="margin-top: 15px;">
+                    <strong>思考：</strong>曲线上的红点就是当前位置，每一步都在往"谷底"走。
+                    这就是"下山"的过程——梯度下降！
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 问题设定
+        const x = 2;
+        const y_true = 2;
+
+        // 状态
+        let w = 0;
+        let stepCount = 0;
+        let autoRunning = false;
+        let autoInterval = null;
+        let history = [];
+
+        // 计算损失
+        function loss(w) {
+            const y_pred = x * w;
+            return Math.pow(y_pred - y_true, 2);
+        }
+
+        // 计算梯度
+        function gradient(w) {
+            const y_pred = x * w;
+            return 2 * (y_pred - y_true) * x;
+        }
+
+        // 绘制损失曲线
+        function drawLossCurve() {
+            const canvas = document.getElementById('lossCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
+
+            ctx.clearRect(0, 0, W, H);
+
+            // 坐标范围
+            const wMin = -1, wMax = 3;
+            const lossMax = 10;
+
+            // 转换函数
+            const toX = (w) => (w - wMin) / (wMax - wMin) * (W - 60) + 40;
+            const toY = (l) => H - 40 - (l / lossMax) * (H - 60);
+
+            // 绘制坐标轴
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(40, 20);
+            ctx.lineTo(40, H - 40);
+            ctx.lineTo(W - 20, H - 40);
+            ctx.stroke();
+
+            // 坐标标签
+            ctx.fillStyle = '#888';
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'center';
+
+            // X 轴标签
+            for (let i = 0; i <= 4; i++) {
+                const wVal = wMin + i * (wMax - wMin) / 4;
+                ctx.fillText(wVal.toFixed(1), toX(wVal), H - 25);
+            }
+            ctx.fillText('w', W - 10, H - 25);
+
+            // Y 轴标签
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const lVal = i * lossMax / 4;
+                ctx.fillText(lVal.toFixed(0), 35, toY(lVal) + 4);
+            }
+            ctx.save();
+            ctx.translate(15, H / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.fillText('Loss', 0, 0);
+            ctx.restore();
+
+            // 绘制损失曲线
+            ctx.strokeStyle = '#f5576c';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let first = true;
+            for (let wVal = wMin; wVal <= wMax; wVal += 0.02) {
+                const l = loss(wVal);
+                if (l <= lossMax) {
+                    if (first) {
+                        ctx.moveTo(toX(wVal), toY(l));
+                        first = false;
+                    } else {
+                        ctx.lineTo(toX(wVal), toY(l));
+                    }
+                }
+            }
+            ctx.stroke();
+
+            // 绘制最优点
+            ctx.fillStyle = '#38ef7d';
+            ctx.beginPath();
+            ctx.arc(toX(1), toY(0), 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#38ef7d';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('最优点', toX(1) + 10, toY(0) + 4);
+
+            // 绘制历史轨迹
+            if (history.length > 1) {
+                ctx.strokeStyle = 'rgba(240, 147, 251, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(toX(history[0].w), toY(history[0].loss));
+                for (let i = 1; i < history.length; i++) {
+                    ctx.lineTo(toX(history[i].w), toY(history[i].loss));
+                }
+                ctx.stroke();
+            }
+
+            // 绘制当前点
+            const currentLoss = loss(w);
+            if (currentLoss <= lossMax && w >= wMin && w <= wMax) {
+                ctx.fillStyle = '#f5576c';
+                ctx.beginPath();
+                ctx.arc(toX(w), toY(currentLoss), 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 绘制梯度箭头
+                const grad = gradient(w);
+                const arrowLen = Math.min(Math.abs(grad) * 10, 50);
+                const arrowDir = grad > 0 ? 1 : -1;
+
+                ctx.strokeStyle = '#ffd93d';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(toX(w), toY(currentLoss));
+                ctx.lineTo(toX(w) + arrowDir * arrowLen, toY(currentLoss));
+                ctx.stroke();
+
+                // 箭头头部
+                ctx.beginPath();
+                ctx.moveTo(toX(w) + arrowDir * arrowLen, toY(currentLoss));
+                ctx.lineTo(toX(w) + arrowDir * (arrowLen - 8), toY(currentLoss) - 5);
+                ctx.lineTo(toX(w) + arrowDir * (arrowLen - 8), toY(currentLoss) + 5);
+                ctx.closePath();
+                ctx.fillStyle = '#ffd93d';
+                ctx.fill();
+            }
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            const currentLoss = loss(w);
+            const grad = gradient(w);
+
+            document.getElementById('currentW').textContent = w.toFixed(4);
+            document.getElementById('currentLoss').textContent = currentLoss.toFixed(4);
+            document.getElementById('currentGrad').textContent = grad.toFixed(4);
+            document.getElementById('currentStep').textContent = stepCount;
+
+            drawLossCurve();
+        }
+
+        // 单步训练
+        function step() {
+            const lr = parseFloat(document.getElementById('lr').value);
+            const grad = gradient(w);
+
+            const oldW = w;
+            w = w - lr * grad;
+            stepCount++;
+
+            history.push({ w: oldW, loss: loss(oldW) });
+
+            // 添加历史记录
+            const historyEl = document.getElementById('history');
+            if (stepCount === 1) {
+                historyEl.innerHTML = '';
+            }
+            const newItem = document.createElement('div');
+            newItem.className = 'history-item';
+            newItem.innerHTML = `#${stepCount}: w=${oldW.toFixed(3)} → ${w.toFixed(3)}, grad=${grad.toFixed(3)}`;
+            historyEl.insertBefore(newItem, historyEl.firstChild);
+
+            updateDisplay();
+
+            // 检查是否收敛
+            if (Math.abs(loss(w)) < 0.0001) {
+                stopAuto();
+            }
+        }
+
+        // 自动训练
+        function toggleAuto() {
+            if (autoRunning) {
+                stopAuto();
+            } else {
+                startAuto();
+            }
+        }
+
+        function startAuto() {
+            autoRunning = true;
+            document.getElementById('autoBtn').textContent = '⏸ 暂停';
+            autoInterval = setInterval(() => {
+                step();
+                if (stepCount > 100 || Math.abs(loss(w)) < 0.0001) {
+                    stopAuto();
+                }
+            }, 200);
+        }
+
+        function stopAuto() {
+            autoRunning = false;
+            document.getElementById('autoBtn').textContent = '⏩ 自动';
+            if (autoInterval) {
+                clearInterval(autoInterval);
+                autoInterval = null;
+            }
+        }
+
+        // 重置
+        function reset() {
+            stopAuto();
+            w = parseFloat(document.getElementById('initW').value);
+            stepCount = 0;
+            history = [];
+            document.getElementById('history').innerHTML = '<div style="color:#888;">训练历史将显示在这里...</div>';
+            updateDisplay();
+        }
+
+        // 事件监听
+        document.getElementById('initW').addEventListener('input', function() {
+            document.getElementById('initWValue').textContent = parseFloat(this.value).toFixed(1);
+            if (stepCount === 0) {
+                w = parseFloat(this.value);
+                updateDisplay();
+            }
+        });
+
+        document.getElementById('lr').addEventListener('input', function() {
+            document.getElementById('lrValue').textContent = parseFloat(this.value).toFixed(2);
+        });
+
+        // 初始化
+        reset();
+    </script>
+</body>
+</html>
