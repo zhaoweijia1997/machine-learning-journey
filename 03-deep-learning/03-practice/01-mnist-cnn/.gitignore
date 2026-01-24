@@ -1,0 +1,17 @@
+# 数据文件（太大，不提交）
+data/
+
+# 训练好的模型（太大，不提交）
+*.pth
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter Notebook 检查点
+.ipynb_checkpoints/
+
+# 系统文件
+.DS_Store
+Thumbs.db
